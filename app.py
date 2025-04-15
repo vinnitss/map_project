@@ -1,15 +1,23 @@
 from flask import Flask, render_template, jsonify
 import csv
+import os
 
 app = Flask(__name__)
 
 # Чтение данных из CSV файла
 def read_objects_from_csv():
     objects = []
-    with open('objects.csv', mode='r', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            objects.append(row)
+    try:
+        file_path = os.path.join('data', 'objects.csv')  # Путь к файлу в папке data
+        if os.path.exists(file_path):
+            with open(file_path, mode='r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    objects.append(row)
+        else:
+            raise FileNotFoundError("CSV файл не найден.")
+    except Exception as e:
+        print(f"Ошибка при чтении CSV: {e}")
     return objects
 
 # Главная страница
@@ -23,13 +31,15 @@ def index():
         latitudes = [float(obj['lat']) for obj in objects]
         longitudes = [float(obj['lon']) for obj in objects]
         map_center = {'lat': sum(latitudes) / len(latitudes), 'lon': sum(longitudes) / len(longitudes)}
-    
+
     return render_template('index.html', api_key='YOUR_YANDEX_API_KEY', map_center=map_center)
 
 # API для получения объектов
 @app.route('/api/objects')
 def api_objects():
     objects = read_objects_from_csv()
+    if not objects:
+        return jsonify({"error": "Нет объектов для отображения."}), 500
     return jsonify(objects)
 
 # Страница с подробной информацией об объекте
