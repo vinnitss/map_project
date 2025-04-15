@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Объекты строительства</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?apikey={{ api_key }}&lang=ru_RU" type="text/javascript"></script>
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; }
+        #map { width: 100%; height: 90%; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="p-4 bg-white shadow flex flex-wrap gap-4 items-center">
+        <label class="flex items-center gap-2">
+            <span class="text-gray-700">Тип:</span>
+            <select id="typeFilter" class="border rounded px-2 py-1">
+                <option value="">Все</option>
+            </select>
+        </label>
+
+        <label class="flex items-center gap-2">
+            <span class="text-gray-700">Статус:</span>
+            <select id="statusFilter" class="border rounded px-2 py-1">
+                <option value="">Все</option>
+            </select>
+        </label>
+
+        <button onclick="resetFilters()" class="bg-gray-200 hover:bg-gray-300 px-4 py-1 rounded">
+            Сбросить
+        </button>
+
+        <span id="resultCount" class="ml-auto text-sm text-gray-600"></span>
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+        ymaps.ready(init);
+        let allObjects = [], map, clusterer;
+
+        function init() {
+            map = new ymaps.Map("map", { center: [55.75, 37.57], zoom: 5 });
+            clusterer = new ymaps.Clusterer();
+            map.geoObjects.add(clusterer);
+
+            fetch('/api/objects')
+                .then(res => res.json())
+                .then(data => {
+                    allObjects = data;
+                    populateFilters(data);
+                    renderPlacemarks();
+                });
+
+            document.getElementById('typeFilter').addEventListener('change', renderPlacemarks);
+            document.getElementById('statusFilter').addEventListener('change', renderPlacemarks);
+        }
+
+        function populateFilters(data) {
+            const typeSet = new Set(), statusSet = new Set();
+            data.forEach(obj => { typeSet.add(obj.type); statusSet.add(obj.status); });
+
+            const typeFilter = document.getElementById('typeFilter');
+            const statusFilter = document.getElementById('statusFilter');
+
+            typeSet.forEach(type => {
+                typeFilter.innerHTML += `<option value="${type}">${type}</option>`;
+            });
+            statusSet.forEach(status => {
+                statusFilter.innerHTML += `<option value="${status}">${status}</option>`;
+            });
+        }
+
+        function renderPlacemarks() {
+            clusterer.removeAll();
+
+            const selectedType = document.getElementById('typeFilter').value;
+            const selectedStatus = document.getElementById('statusFilter').value;
+
+            const filtered = allObjects.filter(obj =>
+                (!selectedType || obj.type === selectedType) &&
+                (!selectedStatus || obj.status === selectedStatus)
+            );
+
+            document.getElementById('resultCount').textContent = `Найдено: ${filtered.length}`;
+
+            const placemarks = filtered.map(obj => new ymaps.Placemark(
+                [obj.lat, obj.lon],
+                {
+                    balloonContent: `
+                        <strong>${obj.name}</strong><br/>
+                        ${obj.info}<br/>
+                        <a href="/object/${obj.id}">Подробнее</a>
+                    `
+                },
+                {
+                    preset: 'islands#circleIcon',
+                    iconColor: getStatusColor(obj.status)
+                }
+            ));
+
+            clusterer.add(placemarks);
+        }
+
+        function getStatusColor(status) {
+            switch (status.toLowerCase()) {
+                case 'завершен': return 'green';
+                case 'в процессе': return 'orange';
+                case 'приостановлен': return 'red';
+                default: return 'gray';
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            renderPlacemarks();
+        }
+    </script>
+</body>
+</html>
