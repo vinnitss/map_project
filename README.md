@@ -28,7 +28,7 @@ map_project/
 ## 📦 Установка
 
 ```bash
-git clone https://your-repo-url.git
+git clone https://github.com/vinnitss/map_project.git
 cd map_project
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
