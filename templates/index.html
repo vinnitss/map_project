@@ -6,27 +6,14 @@
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&amp;apikey={{ api_key }}" type="text/javascript"></script>
     <style>
         #map { width: 100%; height: 90vh; }
-        .filters { margin: 10px; }
-        .filter-button { margin-right: 10px; }
     </style>
 </head>
 <body>
     <h1>Объекты строительства</h1>
-
-    <div class="filters">
-        <button class="filter-button" onclick="applyFilter('active')">Активные</button>
-        <button class="filter-button" onclick="applyFilter('delayed')">Задержанные</button>
-        <button class="filter-button" onclick="applyFilter('stopped')">Остановленные</button>
-        <button class="filter-button" onclick="resetFilters()">Сбросить фильтры</button>
-    </div>
-
     <div id="map"></div>
 
     <script>
-        let filteredObjects = [];
-
         ymaps.ready(init);
-
         function init() {
             const map = new ymaps.Map('map', {
                 center: [{{ map_center.lat }}, {{ map_center.lon }}],
@@ -37,23 +24,24 @@
             fetch('/api/objects')
                 .then(response => response.json())
                 .then(data => {
-                    filteredObjects = data;
-                    updateMap(map, filteredObjects);
-                });
-        }
+                    data.forEach(obj => {
+                        const currentTime = new Date().toLocaleString('ru-RU', {
+                            timeZone: getTimezoneFromCoords(obj.lat, obj.lon),
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZoneName: 'short'
+                        });
 
-        function updateMap(map, objects) {
-            map.geoObjects.removeAll();
-            objects.forEach(obj => {
-                const placemark = new ymaps.Placemark([obj.lat, obj.lon], {
-                    balloonContentHeader: obj.name,
-                    balloonContentBody: obj.info,
-                    balloonContentFooter: `<a href="/object/${obj.id}">Подробнее</a>`
-                }, {
-                    preset: getPresetByStatus(obj.status)
+                        const placemark = new ymaps.Placemark([obj.lat, obj.lon], {
+                            balloonContentHeader: obj.name,
+                            balloonContentBody: `${obj.info}<br><strong>Текущее время:</strong> ${currentTime}`,
+                            balloonContentFooter: `<a href="/object/${obj.id}">Подробнее</a>`
+                        }, {
+                            preset: getPresetByStatus(obj.status)
+                        });
+                        map.geoObjects.add(placemark);
+                    });
                 });
-                map.geoObjects.add(placemark);
-            });
         }
 
         function getPresetByStatus(status) {
@@ -65,13 +53,28 @@
             }
         }
 
-        function applyFilter(status) {
-            const filtered = filteredObjects.filter(obj => obj.status.toLowerCase() === status.toLowerCase());
-            updateMap(map, filtered);
-        }
+        function getTimezoneFromCoords(lat, lon) {
+            const timezones = [
+                { lon: 180, tz: 'Asia/Kamchatka' },
+                { lon: 160, tz: 'Asia/Magadan' },
+                { lon: 150, tz: 'Asia/Vladivostok' },
+                { lon: 135, tz: 'Asia/Yakutsk' },
+                { lon: 120, tz: 'Asia/Irkutsk' },
+                { lon: 105, tz: 'Asia/Krasnoyarsk' },
+                { lon: 90,  tz: 'Asia/Novosibirsk' },
+                { lon: 75,  tz: 'Asia/Yekaterinburg' },
+                { lon: 60,  tz: 'Europe/Moscow' },
+                { lon: 30,  tz: 'Europe/Kaliningrad' },
+                { lon: 0,   tz: 'Europe/London' },
+                { lon: -30, tz: 'Atlantic/Azores' }
+            ];
 
-        function resetFilters() {
-            updateMap(map, filteredObjects);
+            for (let i = 0; i < timezones.length; i++) {
+                if (lon >= timezones[i].lon) {
+                    return timezones[i].tz;
+                }
+            }
+            return 'Europe/Moscow';
         }
     </script>
 </body>
