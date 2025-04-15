@@ -35,11 +35,26 @@ def index():
     return render_template('index.html', api_key='YOUR_YANDEX_API_KEY', map_center=map_center)
 
 # API для получения объектов
-@app.route('/api/objects')
+@app.route("/api/objects")
 def api_objects():
-    objects = read_objects_from_csv()
-    if not objects:
-        return jsonify({"error": "Нет объектов для отображения."}), 500
+    csv_path = os.path.join("data", "objects.csv")
+    objects = []
+    with open(csv_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            try:
+                obj = {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "info": row["info"],
+                    "lat": float(row["lat"]),
+                    "lon": float(row["lon"]),
+                    "type": row["type"],
+                    "status": row["status"]
+                }
+                objects.append(obj)
+            except Exception as e:
+                print(f"Ошибка при обработке строки: {row}\n{e}")
     return jsonify(objects)
 
 # Страница с подробной информацией об объекте
