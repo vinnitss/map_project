@@ -55,9 +55,9 @@
                 clusterBalloonContentLayoutWidth: 300,
                 clusterBalloonContentLayoutHeight: 200,
                 clusterBalloonItemContentLayout: ymaps.templateLayoutFactory.createClass(
-                    '<h4>{{ properties.balloonContentHeader }}</h4>' +
-                    '<p>{{ properties.balloonContentBody }}</p>' +
-                    '<small>{{ properties.balloonContentFooter }}</small>'
+                    '<h4>$[properties.balloonContentHeader]</h4>' +
+                    '<p>$[properties.balloonContentBody]</p>' +
+                    '<small>$[properties.balloonContentFooter]</small>'
                 )
             });
 
