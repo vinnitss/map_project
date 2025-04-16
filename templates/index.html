@@ -20,6 +20,7 @@
                 <option value="office">Офис</option>
                 <option value="res">ВЖП</option>
                 <option value="site">Площадка строительства</option>
+                <option value="rp">ПРС</option>
             </select>
         </label>
         <label>Статус:
@@ -122,8 +123,9 @@
         function getIconByType(type) {
             switch (type.toLowerCase()) {
                 case 'office': return '/static/icons/office.png';
-                case 'res': return '/static/icons/residential_blue.png';
-                case 'site': return '/static/icons/construction_crane.png';
+                case 'res': return '/static/icons/residential.png';
+                case 'site': return '/static/icons/construction.png';
+                case 'rp': return '/static/icons/rp.png';    
                 default: return '/static/icons/default.png';
             }
         }
@@ -133,6 +135,7 @@
                 case 'office': return 'Офис';
                 case 'res': return 'ВЖП';
                 case 'site': return 'Площадка строительства';
+                case 'rp': return 'ПРС';    
                 default: return 'Неизвестно';
             }
         }
