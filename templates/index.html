@@ -37,19 +37,22 @@
                             balloonContentBody: `${obj.info}<br><strong>Текущее время:</strong> ${currentTime}`,
                             balloonContentFooter: `<a href="/object/${obj.id}">Подробнее</a>`
                         }, {
-                            preset: getPresetByType(obj.type)
+                            iconLayout: 'default#image',
+                            iconImageHref: getIconByType(obj.type),
+                            iconImageSize: [30, 42],
+                            iconImageOffset: [-15, -42]
                         });
                         map.geoObjects.add(placemark);
                     });
                 });
         }
 
-        function getPresetByType(type) {
+        function getIconByType(type) {
             switch (type.toLowerCase()) {
-                case 'office': return 'islands#blueGovernmentIcon';
-                case 'res': return 'islands#orangeHomeIcon';
-                case 'site': return 'islands#violetCircleDotIcon';
-                default: return 'islands#grayDotIcon';
+                case 'office': return '/static/icons/office.png';
+                case 'res': return '/static/icons/residential.png';
+                case 'site': return '/static/icons/construction.png';
+                default: return '/static/icons/default.png';
             }
         }
 
