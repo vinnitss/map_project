@@ -5,15 +5,39 @@
     <title>Construction Map</title>
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&amp;apikey={{ api_key }}" type="text/javascript"></script>
     <style>
-        #map { width: 100%; height: 90vh; }
+        #map { width: 100%; height: 85vh; }
+        #filters { margin: 10px; }
+        label { margin-right: 10px; }
     </style>
 </head>
 <body>
     <h1>Объекты строительства</h1>
+
+    <div id="filters">
+        <label>Тип:
+            <select id="typeFilter">
+                <option value="">Все</option>
+                <option value="office">Офис</option>
+                <option value="res">ВЖП</option>
+                <option value="site">Площадка строительства</option>
+            </select>
+        </label>
+        <label>Статус:
+            <select id="statusFilter">
+                <option value="">Все</option>
+                <option value="active">Активный</option>
+                <option value="paused">Приостановлен</option>
+                <option value="finished">Завершён</option>
+            </select>
+        </label>
+    </div>
+
     <div id="map"></div>
 
     <script>
         ymaps.ready(init);
+        let placemarks = [];
+
         function init() {
             const map = new ymaps.Map('map', {
                 center: [{{ map_center.lat }}, {{ map_center.lon }}],
@@ -24,7 +48,7 @@
             fetch('/api/objects')
                 .then(response => response.json())
                 .then(data => {
-                    data.forEach(obj => {
+                    placemarks = data.map(obj => {
                         const currentTime = new Date().toLocaleString('ru-RU', {
                             timeZone: getTimezoneFromCoords(obj.lat, obj.lon),
                             hour: '2-digit',
@@ -32,7 +56,7 @@
                             timeZoneName: 'short'
                         });
 
-                        const placemark = new ymaps.Placemark([obj.lat, obj.lon], {
+                        return new ymaps.Placemark([obj.lat, obj.lon], {
                             balloonContentHeader: `${getFullType(obj.type)} — ${obj.name}`,
                             balloonContentBody: `${obj.info}<br><strong>Текущее время:</strong> ${currentTime}`,
                             balloonContentFooter: `<a href="/object/${obj.id}">Подробнее</a>`
@@ -42,7 +66,30 @@
                             iconImageSize: [30, 42],
                             iconImageOffset: [-15, -42]
                         });
-                        map.geoObjects.add(placemark);
+                    });
+
+                    applyFilters(map);
+                });
+
+            document.getElementById('typeFilter').addEventListener('change', () => applyFilters(map));
+            document.getElementById('statusFilter').addEventListener('change', () => applyFilters(map));
+        }
+
+        function applyFilters(map) {
+            map.geoObjects.removeAll();
+
+            const selectedType = document.getElementById('typeFilter').value;
+            const selectedStatus = document.getElementById('statusFilter').value;
+
+            fetch('/api/objects')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach((obj, index) => {
+                        const matchesType = !selectedType || obj.type === selectedType;
+                        const matchesStatus = !selectedStatus || obj.status === selectedStatus;
+                        if (matchesType && matchesStatus) {
+                            map.geoObjects.add(placemarks[index]);
+                        }
                     });
                 });
         }
@@ -50,8 +97,8 @@
         function getIconByType(type) {
             switch (type.toLowerCase()) {
                 case 'office': return '/static/icons/office.png';
-                case 'res': return '/static/icons/residential.png';
-                case 'site': return '/static/icons/construction.png';
+                case 'res': return '/static/icons/residential_blue.png';
+                case 'site': return '/static/icons/construction_crane.png';
                 default: return '/static/icons/default.png';
             }
         }
