@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Construction Map STNG</title>
+    <title>Construction Map</title>
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&amp;apikey={{ api_key }}" type="text/javascript"></script>
     <style>
         #map { width: 100%; height: 85vh; }
@@ -11,7 +11,7 @@
     </style>
 </head>
 <body>
-    <h1>Объекты строительства АО СТНГ</h1>
+    <h1>Объекты строительства</h1>
 
     <div id="filters">
         <label>Тип:
@@ -36,7 +36,7 @@
 
     <script>
         ymaps.ready(init);
-        let placemarks = [];
+        let allObjects = [];
 
         function init() {
             const map = new ymaps.Map('map', {
@@ -45,10 +45,26 @@
                 controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
             });
 
+            const clusterer = new ymaps.Clusterer({
+                preset: 'islands#invertedBlueClusterIcons',
+                groupByCoordinates: false,
+                clusterDisableClickZoom: false,
+                clusterOpenBalloonOnClick: true,
+                clusterBalloonContentLayout: 'cluster#balloonCarousel',
+                clusterBalloonPanelMaxMapArea: 0,
+                clusterBalloonContentLayoutWidth: 300,
+                clusterBalloonContentLayoutHeight: 200,
+                clusterBalloonItemContentLayout: ymaps.templateLayoutFactory.createClass(
+                    '<h4>{{ properties.balloonContentHeader }}</h4>' +
+                    '<p>{{ properties.balloonContentBody }}</p>' +
+                    '<small>{{ properties.balloonContentFooter }}</small>'
+                )
+            });
+
             fetch('/api/objects')
                 .then(response => response.json())
                 .then(data => {
-                    placemarks = data.map(obj => {
+                    allObjects = data.map(obj => {
                         const currentTime = new Date().toLocaleString('ru-RU', {
                             timeZone: getTimezoneFromCoords(obj.lat, obj.lon),
                             hour: '2-digit',
@@ -68,15 +84,15 @@
                         });
                     });
 
-                    applyFilters(map);
+                    applyFilters(map, clusterer);
                 });
 
-            document.getElementById('typeFilter').addEventListener('change', () => applyFilters(map));
-            document.getElementById('statusFilter').addEventListener('change', () => applyFilters(map));
+            document.getElementById('typeFilter').addEventListener('change', () => applyFilters(map, clusterer));
+            document.getElementById('statusFilter').addEventListener('change', () => applyFilters(map, clusterer));
         }
 
-        function applyFilters(map) {
-            map.geoObjects.removeAll();
+        function applyFilters(map, clusterer) {
+            clusterer.removeAll();
 
             const selectedType = document.getElementById('typeFilter').value;
             const selectedStatus = document.getElementById('statusFilter').value;
@@ -84,21 +100,24 @@
             fetch('/api/objects')
                 .then(response => response.json())
                 .then(data => {
-                    data.forEach((obj, index) => {
+                    const filteredPlacemarks = allObjects.filter((placemark, index) => {
+                        const obj = data[index];
                         const matchesType = !selectedType || obj.type === selectedType;
                         const matchesStatus = !selectedStatus || obj.status === selectedStatus;
-                        if (matchesType && matchesStatus) {
-                            map.geoObjects.add(placemarks[index]);
-                        }
+                        return matchesType && matchesStatus;
                     });
+
+                    clusterer.add(filteredPlacemarks);
+                    map.geoObjects.removeAll();
+                    map.geoObjects.add(clusterer);
                 });
         }
 
         function getIconByType(type) {
             switch (type.toLowerCase()) {
                 case 'office': return '/static/icons/office.png';
-                case 'res': return '/static/icons/residential.png';
-                case 'site': return '/static/icons/construction.png';
+                case 'res': return '/static/icons/residential_blue.png';
+                case 'site': return '/static/icons/construction_crane.png';
                 default: return '/static/icons/default.png';
             }
         }
