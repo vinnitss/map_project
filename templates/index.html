@@ -33,23 +33,32 @@
                         });
 
                         const placemark = new ymaps.Placemark([obj.lat, obj.lon], {
-                            balloonContentHeader: obj.name,
+                            balloonContentHeader: `${getFullType(obj.type)} — ${obj.name}`,
                             balloonContentBody: `${obj.info}<br><strong>Текущее время:</strong> ${currentTime}`,
                             balloonContentFooter: `<a href="/object/${obj.id}">Подробнее</a>`
                         }, {
-                            preset: getPresetByStatus(obj.status)
+                            preset: getPresetByType(obj.type)
                         });
                         map.geoObjects.add(placemark);
                     });
                 });
         }
 
-        function getPresetByStatus(status) {
-            switch (status.toLowerCase()) {
-                case 'active': return 'islands#greenDotIcon';
-                case 'delayed': return 'islands#yellowDotIcon';
-                case 'stopped': return 'islands#redDotIcon';
+        function getPresetByType(type) {
+            switch (type.toLowerCase()) {
+                case 'office': return 'islands#blueGovernmentIcon';
+                case 'res': return 'islands#orangeHomeIcon';
+                case 'site': return 'islands#violetCircleDotIcon';
                 default: return 'islands#grayDotIcon';
+            }
+        }
+
+        function getFullType(type) {
+            switch (type.toLowerCase()) {
+                case 'office': return 'Офис';
+                case 'res': return 'ВЖП';
+                case 'site': return 'Площадка строительства';
+                default: return 'Неизвестно';
             }
         }
 
