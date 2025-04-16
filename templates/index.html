@@ -30,6 +30,9 @@
                 <option value="finished">Завершён</option>
             </select>
         </label>
+        <label>Поиск:
+            <input type="text" id="searchInput" placeholder="Название объекта...">
+        </label>
     </div>
 
     <div id="map"></div>
@@ -89,6 +92,7 @@
 
             document.getElementById('typeFilter').addEventListener('change', () => applyFilters(map, clusterer));
             document.getElementById('statusFilter').addEventListener('change', () => applyFilters(map, clusterer));
+            document.getElementById('searchInput').addEventListener('input', () => applyFilters(map, clusterer));
         }
 
         function applyFilters(map, clusterer) {
@@ -96,6 +100,7 @@
 
             const selectedType = document.getElementById('typeFilter').value;
             const selectedStatus = document.getElementById('statusFilter').value;
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
 
             fetch('/api/objects')
                 .then(response => response.json())
@@ -104,7 +109,8 @@
                         const obj = data[index];
                         const matchesType = !selectedType || obj.type === selectedType;
                         const matchesStatus = !selectedStatus || obj.status === selectedStatus;
-                        return matchesType && matchesStatus;
+                        const matchesSearch = !searchQuery || obj.name.toLowerCase().includes(searchQuery);
+                        return matchesType && matchesStatus && matchesSearch;
                     });
 
                     clusterer.add(filteredPlacemarks);
