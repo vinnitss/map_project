@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Construction Map</title>
+    <title>Construction Map STNG</title>
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&amp;apikey={{ api_key }}" type="text/javascript"></script>
     <style>
         #map { width: 100%; height: 85vh; }
@@ -11,7 +11,7 @@
     </style>
 </head>
 <body>
-    <h1>Объекты строительства</h1>
+    <h1>Объекты строительства АО СТНГ</h1>
 
     <div id="filters">
         <label>Тип:
@@ -97,8 +97,8 @@
         function getIconByType(type) {
             switch (type.toLowerCase()) {
                 case 'office': return '/static/icons/office.png';
-                case 'res': return '/static/icons/residential_blue.png';
-                case 'site': return '/static/icons/construction_crane.png';
+                case 'res': return '/static/icons/residential.png';
+                case 'site': return '/static/icons/construction.png';
                 default: return '/static/icons/default.png';
             }
         }
